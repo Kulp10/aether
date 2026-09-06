@@ -53,7 +53,7 @@ Quantum (Facade)
 - **PythonBridge** only passes non-null env vars to preserve boto3 credential chain (IAM Roles).
 - **QPU safety:** Drivers with `synchronous_safe: false` throw on `->run()` to prevent HTTP timeouts.
 - **EntropyGenerator::integer()** uses rejection sampling on a 256-bit batch buffer — never modulo.
-- **composer.json requires laravel/framework:** the package uses `Illuminate\Foundation` (AboutCommand, PendingDispatch, the `config()`/`app()`/`event()`/`dispatch()` helpers), which is not published as a standalone `illuminate/*` component. `tests/Unit/ComposerManifestTest.php` guards the declaration.
+- **composer.json requires laravel/framework, not illuminate/* components:** the package uses `Illuminate\Foundation` (AboutCommand, PendingDispatch, the `config()`/`app()`/`event()`/`dispatch()` helpers), which only ships inside the framework. The CI matrix pins `laravel/framework` per Laravel version; `tests/Unit/ComposerManifestTest.php` guards the requirement.
 
 ## Config
 

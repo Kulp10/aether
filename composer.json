@@ -19,10 +19,6 @@
     "require": {
         "php": "^8.3",
         "laravel/framework": "^13.0",
-        "illuminate/console": "^13.0",
-        "illuminate/contracts": "^13.0",
-        "illuminate/database": "^13.0",
-        "illuminate/support": "^13.0",
         "symfony/process": "^7.0"
     },
     "require-dev": {

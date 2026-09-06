@@ -3,52 +3,41 @@
 declare(strict_types=1);
 
 /**
- * Guards composer.json against undeclared dependencies: every Illuminate
- * namespace the package imports must come from a package it requires.
- *
- * Illuminate\Foundation (AboutCommand, PendingDispatch, Foundation\Queue\Queueable
- * and the config()/app()/event()/dispatch() helpers) is not published as a
- * standalone illuminate/* package, so using it means requiring laravel/framework.
+ * Guards composer.json against the undeclared dependency the package used to
+ * have: Illuminate\Foundation (AboutCommand, PendingDispatch, the queue
+ * Queueable trait and the config()/app()/event()/dispatch() helpers) ships
+ * only inside laravel/framework, never as a standalone illuminate/* package.
  */
-function composerManifest(): array
+function composerRequire(): array
 {
-    return json_decode((string) file_get_contents(__DIR__.'/../../composer.json'), true, flags: JSON_THROW_ON_ERROR);
+    $manifest = json_decode((string) file_get_contents(__DIR__.'/../../composer.json'), true, flags: JSON_THROW_ON_ERROR);
+
+    return $manifest['require'];
 }
 
-/** @return list<string> */
-function illuminateNamespacesUsedInSrc(): array
+function srcUsesFoundation(): bool
 {
-    $namespaces = [];
-
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__.'/../../src')) as $file) {
         if (! $file->isFile() || $file->getExtension() !== 'php') {
             continue;
         }
 
-        preg_match_all('/^use Illuminate\\\\([A-Za-z]+)\\\\/m', (string) file_get_contents($file->getPathname()), $matches);
-        $namespaces = [...$namespaces, ...$matches[1]];
+        $source = (string) file_get_contents($file->getPathname());
+
+        if (str_contains($source, 'Illuminate\\Foundation\\')
+            || preg_match('/\b(config|app|event|dispatch|report|base_path|config_path)\(/', $source) === 1) {
+            return true;
+        }
     }
 
-    return array_values(array_unique($namespaces));
+    return false;
 }
 
-it('requires laravel/framework because the package uses Illuminate\Foundation directly', function () {
-    $require = composerManifest()['require'];
-
-    expect($require)->toHaveKey('laravel/framework')
-        ->and($require['laravel/framework'])->toBe('^13.0');
+it('requires laravel/framework', function () {
+    expect(composerRequire())->toHaveKey('laravel/framework');
 });
 
-it('declares every Illuminate namespace it imports', function () {
-    $require = composerManifest()['require'];
-    $namespaces = illuminateNamespacesUsedInSrc();
-
-    expect($namespaces)->toContain('Foundation');
-
-    foreach ($namespaces as $namespace) {
-        $component = 'illuminate/'.strtolower($namespace);
-        $declared = array_key_exists($component, $require) || array_key_exists('laravel/framework', $require);
-
-        expect($declared)->toBeTrue("Illuminate\\{$namespace} is imported in src/ but neither {$component} nor laravel/framework is required.");
-    }
+it('needs the framework because src uses Illuminate\Foundation classes or helpers', function () {
+    // If this ever turns false the package could move back to illuminate/* components.
+    expect(srcUsesFoundation())->toBeTrue();
 });
