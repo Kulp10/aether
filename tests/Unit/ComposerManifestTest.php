@@ -9,33 +9,33 @@ declare(strict_types=1);
  * only inside laravel/framework, never as a standalone illuminate/* package.
  */
 if (! function_exists('composerRequire')) {
-function composerRequire(): array
-{
-    $manifest = json_decode((string) file_get_contents(__DIR__.'/../../composer.json'), true, flags: JSON_THROW_ON_ERROR);
+    function composerRequire(): array
+    {
+        $manifest = json_decode((string) file_get_contents(__DIR__.'/../../composer.json'), true, flags: JSON_THROW_ON_ERROR);
 
-    return $manifest['require'];
-}
+        return $manifest['require'];
+    }
 
 }
 
 if (! function_exists('srcUsesFoundation')) {
-function srcUsesFoundation(): bool
-{
-    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__.'/../../src')) as $file) {
-        if (! $file->isFile() || $file->getExtension() !== 'php') {
-            continue;
+    function srcUsesFoundation(): bool
+    {
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__.'/../../src')) as $file) {
+            if (! $file->isFile() || $file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $source = (string) file_get_contents($file->getPathname());
+
+            if (str_contains($source, 'Illuminate\\Foundation\\')
+                || preg_match('/\b(config|app|event|dispatch|report|base_path|config_path)\(/', $source) === 1) {
+                return true;
+            }
         }
 
-        $source = (string) file_get_contents($file->getPathname());
-
-        if (str_contains($source, 'Illuminate\\Foundation\\')
-            || preg_match('/\b(config|app|event|dispatch|report|base_path|config_path)\(/', $source) === 1) {
-            return true;
-        }
+        return false;
     }
-
-    return false;
-}
 }
 
 it('requires laravel/framework', function () {
