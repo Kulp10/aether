@@ -8,6 +8,7 @@ declare(strict_types=1);
  * Queueable trait and the config()/app()/event()/dispatch() helpers) ships
  * only inside laravel/framework, never as a standalone illuminate/* package.
  */
+if (! function_exists('composerRequire')) {
 function composerRequire(): array
 {
     $manifest = json_decode((string) file_get_contents(__DIR__.'/../../composer.json'), true, flags: JSON_THROW_ON_ERROR);
@@ -15,6 +16,9 @@ function composerRequire(): array
     return $manifest['require'];
 }
 
+}
+
+if (! function_exists('srcUsesFoundation')) {
 function srcUsesFoundation(): bool
 {
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__.'/../../src')) as $file) {
@@ -31,6 +35,7 @@ function srcUsesFoundation(): bool
     }
 
     return false;
+}
 }
 
 it('requires laravel/framework', function () {
